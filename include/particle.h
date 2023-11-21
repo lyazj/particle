@@ -30,15 +30,7 @@ private:
 };
 
 struct ParticleAttributeTypeError : public std::logic_error {
-
   ParticleAttributeTypeError(ParticleAttribute::type_t type);
-
-};
-
-struct ParticleAttributeKeyError : public std::logic_error {
-
-  ParticleAttributeKeyError(const char *key);
-
 };
 
 class ParticleDatabase {
@@ -47,11 +39,17 @@ public:
   ParticleDatabase(const char *filename);
   ~ParticleDatabase();
   ParticleAttribute query(int64_t pid, const char *key) const;
+  ParticleAttribute query(int64_t pid, size_t column) const;
+  size_t query(const char *key) const;
 
 private:
   class Inner;
   Inner *inner;
 
+};
+
+struct ParticleAttributeKeyError : public std::logic_error {
+  ParticleAttributeKeyError(const char *key);
 };
 
 inline ParticleAttribute::ParticleAttribute()

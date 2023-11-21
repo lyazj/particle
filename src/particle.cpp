@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <utility>
 
 using namespace std;
 using nlohmann::json;
@@ -34,6 +35,8 @@ private:
 public:
   Inner(const char *filename);
   ParticleAttribute query(int64_t pid, const char *key) const;
+  ParticleAttribute query(int64_t pid, size_t column) const;
+  size_t query(const char *key) const;
 
 };
 
@@ -45,6 +48,16 @@ ParticleDatabase::~ParticleDatabase() { delete inner; }
 ParticleAttribute ParticleDatabase::query(int64_t pid, const char *key) const
 {
   return inner->query(pid, key);
+}
+
+ParticleAttribute ParticleDatabase::query(int64_t pid, size_t column) const
+{
+  return inner->query(pid, column);
+}
+
+size_t ParticleDatabase::query(const char *key) const
+{
+  return inner->query(key);
 }
 
 inline ParticleDatabase::Inner::Inner(const char *filename)
@@ -60,15 +73,21 @@ inline ParticleDatabase::Inner::Inner(const char *filename)
 }
 
 inline ParticleAttribute ParticleDatabase::Inner::query(int64_t pid, const char *key) const {
+  return query(pid, query(key));
+}
+
+inline ParticleAttribute ParticleDatabase::Inner::query(int64_t pid, size_t column) const {
+  const json &attr = values.at(pid)[column];
+  if(attr.is_null()) return ParticleAttribute();
+  if(attr.is_number_integer()) return ParticleAttribute((int64_t)attr);
+  if(attr.is_number_float()) return ParticleAttribute((double)attr);
+  const string &value = attr;
+  return ParticleAttribute(value);
+}
+
+inline size_t ParticleDatabase::Inner::query(const char *key) const {
   for(size_t i = 0; i < keys.size(); ++i) {
-    if(keys[i] == key) {
-      const json &attr = values.at(pid)[i];
-      if(attr.is_null()) return ParticleAttribute();
-      if(attr.is_number_integer()) return ParticleAttribute((int64_t)attr);
-      if(attr.is_number_float()) return ParticleAttribute((double)attr);
-      const string &value = attr;
-      return ParticleAttribute(value);
-    }
+    if(keys[i] == key) return i;
   }
   throw ParticleAttributeKeyError(key);
 }

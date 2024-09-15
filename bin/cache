@@ -10,5 +10,6 @@ CACHE_FILE = sys.argv[1]
 import json
 import particle  # https://pypi.org/project/particle
 
+os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
 with open(CACHE_FILE, 'w') as file:
     json.dump(particle.Particle.to_list(), file)
